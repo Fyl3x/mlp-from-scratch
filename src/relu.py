@@ -1,6 +1,8 @@
 import numpy as np
+from module import Module
 
-class ReLU():
+
+class ReLU(Module):
     def __init__(self):
         pass
     def forward(self,x):

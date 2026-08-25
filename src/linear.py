@@ -1,6 +1,8 @@
 import numpy as np
-from embedding import emb,batch
-class Linear():
+from module import Module
+
+from embedding import Embedding
+class Linear(Module):
     def __init__(self,in_dim,out_dim):
         self.in_dim = in_dim
         self.out_dim = out_dim
@@ -13,11 +15,11 @@ class Linear():
     def backward(self):
         pass
 
+if __name__ == "__main__":
 
-
-lin = Linear(in_dim=64,out_dim=32)
-
-pooled = emb.forward(batch)
-out = lin.forward(pooled)
-print(pooled.shape)
-print(out.shape)
+    lin = Linear(in_dim=64,out_dim=32)
+    
+    pooled = np.random.randn(5,64)
+    out = lin(pooled)
+    print(pooled.shape)
+    print(out.shape)

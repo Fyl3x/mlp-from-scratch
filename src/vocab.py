@@ -59,16 +59,17 @@ class Vocab:
             else:
                 result_text += word + " "
         return result_text
+    
+if __name__ == "__main__":
+
+    test_data = pd.read_csv("./data/processed/train.csv")
 
 
-test_data = pd.read_csv("./data/processed/train.csv")
+    vocabulary = Vocab(2,400,test_data["Consumer complaint narrative"])
 
 
-vocabulary = Vocab(2,400,test_data["Consumer complaint narrative"])
-
-
-narrative = test_data["Consumer complaint narrative"][1]
-encoded = vocabulary.encode(narrative)
-decoded = vocabulary.decode(encoded)
-print(len(encoded))   # should be exactly 400
-print(narrative)        # should roughly resemble the original narrative, minus punctuation/casing
+    narrative = test_data["Consumer complaint narrative"][1]
+    encoded = vocabulary.encode(narrative)
+    decoded = vocabulary.decode(encoded)
+    print(len(encoded))   # should be exactly 400
+    print(decoded)        # should roughly resemble the original narrative, minus punctuation/casing
