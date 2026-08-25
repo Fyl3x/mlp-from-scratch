@@ -1,7 +1,7 @@
 import numpy as np
-from module import Module
+from .module import Module
 
-from embedding import Embedding
+from .embedding import Embedding
 class Linear(Module):
     def __init__(self,in_dim,out_dim):
         self.in_dim = in_dim

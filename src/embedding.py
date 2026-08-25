@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd 
-from vocab import Vocab 
-from module import Module
+from .vocab import Vocab 
+from .module import Module
 class Embedding(Module):
     def __init__(self,vocab_size,embed_dim):
         self.vocab_size = vocab_size
