@@ -18,10 +18,10 @@ class Embedding:
 
 
 emb = Embedding(vocab_size=len(vocabulary.word2idx), embed_dim=64)
-batch = np.array([vocabulary.encode(narrative)])  # shape should be (1, 400)
-out = emb.forward(batch)
-print(batch.shape)   # expect (1, 400)
-print(out.shape)     # expect (1, 64)
+# batch = np.array([vocabulary.encode(narrative)])  # shape should be (1, 400)
+# out = emb.forward(batch)
+# print(batch.shape)   # expect (1, 400)
+# print(out.shape)     # expect (1, 64)
 
 
 sample = test["Consumer complaint narrative"].iloc[:5]
