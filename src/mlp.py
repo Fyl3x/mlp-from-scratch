@@ -5,9 +5,9 @@ class MLPHead(Module):
     def __init__(self,embed_dim,output_dim):
         input_dim = embed_dim
         out_dim = output_dim
-        self.linear1 = Linear(input_dim,4*input_dim)
+        self.linear1 = Linear(input_dim,4*input_dim,bias=False)
         self.relu1 = ReLU()
-        self.linear2 = Linear(4*input_dim,input_dim)
+        self.linear2 = Linear(4*input_dim,input_dim,bias=False)
         self.relu2 = ReLU()
         self.linear3 = Linear(input_dim,out_dim)
 
