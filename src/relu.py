@@ -6,7 +6,17 @@ class ReLU(Module):
     def __init__(self):
         pass
     def forward(self,x):
-        out = np.maximum(x,0)
-        return out
-    def backward(self):
-        pass
+        self.out = np.maximum(x,0)
+        self.mask = (x > 0)
+        return self.out
+    def backward(self,local_grad):
+        self.local_grad = local_grad
+        # drelu = np.zeros_like(self.out)
+        # drelu[self.mask] = local_grad
+        drelu = local_grad * self.mask
+        return drelu
+    def parameters(self):
+        return super().parameters()
+    def gradients(self):
+        return super().gradients()
+

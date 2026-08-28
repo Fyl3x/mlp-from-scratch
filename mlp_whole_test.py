@@ -4,7 +4,7 @@ from src.embedding import Embedding
 from src.vocab import Vocab
 from src.mlp import MLPHead
 from src.crossentropy import CrossEntropyLoss
-
+from src.optimizer import Optimizer
 
 embed_dim = 64
 # importing the whole training data at once (this is text)
@@ -27,7 +27,7 @@ sample,targets = get_batch(32) # this is still text
 num_classes = len(train_data["targets"].unique()) # this gives 12 classes
 
 # Initialization of the Vocab Object to use it
-Vocabulary = Vocab(2,400,train_data)
+Vocabulary = Vocab(2,400,train_data["Consumer complaint narrative"])
 Vocabed_text = np.array([Vocabulary.encode(text) for text in sample])
 # these are now Numbers (32,400)
 
@@ -37,12 +37,49 @@ Embedded_text = Embeddor(Vocabed_text) # this is now (32,400,64) summed over dim
 # this is now (32,64)
 
 # Initialization of the MLP Head
-NeuralNet = MLPHead(embed_dim=embed_dim,output_dim=num_classes)
+NeuralNet = MLPHead(embed_dim=embed_dim,output_dim=num_classes,targets=targets)
 MLP_result = NeuralNet(Embedded_text) # this now goes through the follwing
 #     Linear -> BatchNorm -> Relu -> Linear -> BatchNorm -> Relu -> Linear -> (32,12)
 # 32,64 -> 32,256               32,256 -> 32,64                32,64 -> 32,12 (logits)
 
 
-loss = CrossEntropyLoss()
-losses = loss(MLP_result,targets)
+loss = CrossEntropyLoss(MLP_result,targets=targets)
+losses = loss()
 print(losses)
+
+# print(len(NeuralNet.parameters()))
+# for i,p in enumerate(NeuralNet.parameters()):
+#     print(f"Parameter {i}: shape = {p.shape}")
+# for i in range (1000):
+#     NeuralNet(Embedded_text)
+#     loss()
+#     NeuralNet.backward()
+#     parameters = NeuralNet.parameters()
+#     gradients = NeuralNet.gradients()
+#     for p,g in zip(parameters,gradients):
+#         p -= 0.01*g
+
+
+# new_result = NeuralNet(Embedded_text)
+# new_loss = CrossEntropyLoss(new_result,targets=targets)
+# print(new_loss())
+
+
+# Forward -> Loss -> Backward -> P/G -> Update
+params = NeuralNet.parameters() + Embeddor.parameters()
+optim = Optimizer(params=params,lr=1e-3)
+        
+for i in range(1000):
+    forward = NeuralNet(Embedded_text)
+    loss = CrossEntropyLoss(forward,targets=targets)
+    loss()
+    dEmbedded = NeuralNet.backward()
+    dEmbedding = Embeddor.backward(dEmbedded)
+    grads = NeuralNet.gradients() + [dEmbedding]
+    optim.step(grads=grads)
+print(loss())
+
+print(len(params),
+len(grads),
+params[-1].shape,
+grads[-1].shape)
