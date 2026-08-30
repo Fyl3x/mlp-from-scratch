@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 import pandas as pd 
 from .vocab import Vocab 
 from .module import Module

@@ -1,4 +1,4 @@
-import numpy as np 
+import cupy as np 
 from .module import Module
 class CrossEntropyLoss(Module):
     def __init__(self,logits,targets):
@@ -12,16 +12,23 @@ class CrossEntropyLoss(Module):
         e_logits_sum = e_logits.sum(axis=1,keepdims=True)
         self.probs = e_logits / e_logits_sum
         logprobs = np.log(self.probs)  
-        loss = -logprobs[np.arange(len(self.targets)),self.targets].mean()
-        self.logprobs = logprobs
+        smoothing = 0.1
+        n_classes = self.logits.shape[1]
+        target_probs = np.full_like(self.probs, smoothing / n_classes)
+        target_probs[np.arange(len(self.targets)), self.targets] += (1 - smoothing)
+        
+        loss = -(target_probs * logprobs).sum(axis=1).mean()        
         self.B = len(self.targets)
+        self.logprobs = logprobs
+        self.target_probs = target_probs
+
         self.e_logits_sum = e_logits_sum
         self.e_logits = e_logits
         self.stable_logits = stable_logits
         return loss
     def backward(self):
-        dlogprobs = np.zeros_like(self.logprobs)
-        dlogprobs[np.arange(self.B),self.targets] = (-1/self.B)
+        dlogprobs = -self.target_probs / self.B
+        # dlogprobs[np.arange(self.B),self.targets] = (-1/self.B)
         dprobs = dlogprobs * (1/self.probs)
         de_logits_sum = dprobs * self.e_logits * (-1/(self.e_logits_sum)**2)
         de_logits_sum = de_logits_sum.sum(axis=1,keepdims=True)

@@ -1,19 +1,30 @@
 from .module import Module
-import numpy as np
+import cupy as np
 
 
 class BatchNorm1d(Module):
-    def __init__(self,num_features,eps=1e-5):
+    def __init__(self,num_features,eps=1e-5,momentum=0.9):
         super().__init__()
+        self.running_mean = np.zeros((1,num_features))
+        self.running_var = np.ones((1,num_features))
+        self.momentum = momentum
+        self.training = True
         self.num_features = num_features
         self.eps = eps
         self.gamma = np.ones((num_features,))
         self.beta =  np.zeros((num_features,))
     def forward(self,x):
-        self.x = x
-        self.loc_mean = x.mean(axis=0,keepdims=True)
-        self.loc_var = x.var(axis=0,keepdims=True)
-        self.x_norm = (x - self.loc_mean)/ np.sqrt(self.loc_var + self.eps)
+        if self.training:
+            self.x = x
+            self.loc_mean = x.mean(axis=0,keepdims=True)
+            self.loc_var = x.var(axis=0,keepdims=True)
+            self.running_var = self.momentum*self.running_var + (1-self.momentum)*self.loc_var
+            self.running_mean = self.momentum*self.running_mean + (1-self.momentum)*self.loc_mean
+            mean,var = self.loc_mean,self.loc_var
+        else:
+            mean,var = self.running_mean, self.running_var
+        self.x_norm = (x - mean)/ np.sqrt(var + self.eps)
+
         result = self.gamma * self.x_norm + self.beta
         return result 
     def backward(self,local_grad):

@@ -1,5 +1,5 @@
 from .module import Module
-import numpy as np
+import cupy as np
 
 
 class LayerNorm1d(Module):

@@ -1,4 +1,4 @@
-import numpy as np
+import cupy as np
 from .module import Module
 
 
@@ -19,4 +19,11 @@ class ReLU(Module):
         return super().parameters()
     def gradients(self):
         return super().gradients()
+
+
+if __name__ == "__main__":
+    test_arr = np.array([[1.0,-5.0,17.0]])
+    relu = ReLU()
+    test_result = relu(test_arr)
+    print(test_result)
 
