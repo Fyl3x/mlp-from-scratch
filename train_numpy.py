@@ -22,6 +22,9 @@ for idx, product in enumerate(sorted(train_data["Product"].unique())):
 
 train_data['targets'] = train_data["Product"].map(dictio)
 val_data['targets'] = val_data["Product"].map(dictio)
+test_data = pd.read_csv("data/processed/test.csv")
+test_data["targets"] = test_data["Product"].map(dictio)
+assert test_data["targets"].notna().all(), "test has a label unseen in train"
 
 num_classes = len(train_data["targets"].unique())  # 12 classes
 
@@ -53,6 +56,9 @@ Whole_targets = np.asarray(train_data["targets"].to_numpy())
 
 Vocabed_val = np.array([Vocabulary.encode(text) for text in val_data["Consumer complaint narrative"]])
 target = np.asarray(val_data["targets"].to_numpy())
+Vocabed_test = np.array([Vocabulary.encode(text) for text in test_data["Consumer complaint narrative"]])
+test_target = np.asarray(test_data["targets"].to_numpy())
+print("train/val/test:", Whole_Vocab.shape, Vocabed_val.shape, Vocabed_test.shape)
 
 def set_train_mode(flag):
     for layer in (NeuralNet.bn1, NeuralNet.bn2, NeuralNet.dropout1, NeuralNet.dropout2):
@@ -119,6 +125,12 @@ for p, best_p in zip(all_params, best_params):
     p[...] = best_p
 
 print(f"best val loss (restored): {best_val}")
+set_train_mode(False)
+test_logits = predict_logits(Vocabed_test)
+test_preds = np.argmax(test_logits, axis=1)
+test_acc = float((test_preds == test_target).mean() * 100)
+test_loss = float(CrossEntropyLoss(test_logits, targets=test_target)())
+print(f"test_acc = {test_acc:.2f}%, test_loss (label-smoothed CE) = {test_loss:.4f}")
 
 epochs_range = range(1, epochs + 1)
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
