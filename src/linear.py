@@ -1,4 +1,4 @@
-import cupy as np
+from .backend import np
 from .module import Module
 
 class Linear(Module):
@@ -40,75 +40,74 @@ class Linear(Module):
         return params
 
 
-# if __name__ == "__main__":
-#     import numpy as np
+if __name__ == "__main__":
 
-#     np.random.seed(42)
+    np.random.seed(42)
 
-#     lin = Linear(in_dim=4, out_dim=3, bias=True)
+    lin = Linear(in_dim=4, out_dim=3, bias=True)
 
-#     X = np.random.randn(2, 4)
-#     dout = np.random.randn(2, 3)
+    X = np.random.randn(2, 4)
+    dout = np.random.randn(2, 3)
 
-#     out = lin(X)
-#     dX, dW, db = lin.backward(dout)
+    out = lin(X)
+    dX = lin.backward(dout)
+    dW, db = lin.dW, lin.db
+    epsilon = 1e-5
 
-#     epsilon = 1e-5
+    # Check dX[0,0]
+    X_plus = X.copy()
+    X_plus[0,0] += epsilon
 
-#     # Check dX[0,0]
-#     X_plus = X.copy()
-#     X_plus[0,0] += epsilon
+    X_minus = X.copy()
+    X_minus[0,0] -= epsilon
 
-#     X_minus = X.copy()
-#     X_minus[0,0] -= epsilon
+    loss_plus = (lin(X_plus) * dout).sum()
+    loss_minus = (lin(X_minus) * dout).sum()
 
-#     loss_plus = (lin(X_plus) * dout).sum()
-#     loss_minus = (lin(X_minus) * dout).sum()
+    numerical_dX = (loss_plus - loss_minus) / (2 * epsilon)
 
-#     numerical_dX = (loss_plus - loss_minus) / (2 * epsilon)
+    print("dX analytical:", dX[0,0])
+    print("dX numerical: ", numerical_dX)
+    print("difference:   ", abs(dX[0,0] - numerical_dX))
+    # Check dW[0,0]
+    W_orig = lin.weight.copy()
+    W_plus = lin.weight.copy()
+    W_plus[0,0] += epsilon
 
-#     print("dX analytical:", dX[0,0])
-#     print("dX numerical: ", numerical_dX)
-#     print("difference:   ", abs(dX[0,0] - numerical_dX))
-#     # Check dW[0,0]
+    W_minus = lin.weight.copy()
+    W_minus[0,0] -= epsilon
 
-#     W_plus = lin.weight.copy()
-#     W_plus[0,0] += epsilon
+    lin.weight = W_plus
+    loss_plus = (lin(X) * dout).sum()
 
-#     W_minus = lin.weight.copy()
-#     W_minus[0,0] -= epsilon
+    lin.weight = W_minus
+    loss_minus = (lin(X) * dout).sum()
 
-#     lin.weight = W_plus
-#     loss_plus = (lin(X) * dout).sum()
+    lin.weight = W_orig  # restore
 
-#     lin.weight = W_minus
-#     loss_minus = (lin(X) * dout).sum()
+    numerical_dW = (loss_plus - loss_minus) / (2 * epsilon)
 
-#     lin.weight = W_plus  # restore
+    print("dW analytical:", dW[0,0])
+    print("dW numerical: ", numerical_dW)
+    print("difference:   ", abs(dW[0,0] - numerical_dW))
+    # Check db[0,0]
 
-#     numerical_dW = (loss_plus - loss_minus) / (2 * epsilon)
+    bias_plus = lin.bias.copy()
+    bias_plus[0,0] += epsilon
 
-#     print("dW analytical:", dW[0,0])
-#     print("dW numerical: ", numerical_dW)
-#     print("difference:   ", abs(dW[0,0] - numerical_dW))
-#     # Check db[0,0]
+    bias_minus = lin.bias.copy()
+    bias_minus[0,0] -= epsilon
 
-#     bias_plus = lin.bias.copy()
-#     bias_plus[0,0] += epsilon
+    lin.bias = bias_plus
+    loss_plus = (lin(X) * dout).sum()
 
-#     bias_minus = lin.bias.copy()
-#     bias_minus[0,0] -= epsilon
+    lin.bias = bias_minus
+    loss_minus = (lin(X) * dout).sum()
 
-#     lin.bias = bias_plus
-#     loss_plus = (lin(X) * dout).sum()
+    lin.bias = bias_plus  # restore
 
-#     lin.bias = bias_minus
-#     loss_minus = (lin(X) * dout).sum()
+    numerical_db = (loss_plus - loss_minus) / (2 * epsilon)
 
-#     lin.bias = bias_plus  # restore
-
-#     numerical_db = (loss_plus - loss_minus) / (2 * epsilon)
-
-#     print("db analytical:", db[0,0])
-#     print("db numerical: ", numerical_db)
-#     print("difference:   ", abs(db[0,0] - numerical_db))
+    print("db analytical:", db[0,0])
+    print("db numerical: ", numerical_db)
+    print("difference:   ", abs(db[0,0] - numerical_db))
