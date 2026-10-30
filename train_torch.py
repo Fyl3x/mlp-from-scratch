@@ -1,3 +1,4 @@
+import argparse
 import copy
 import torch
 from torch import nn
@@ -5,20 +6,22 @@ import torch.nn.functional as F
 import pandas as pd 
 from src.vocab import Vocab
 
-device = 'cuda'
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print("device:", device)
 torch.manual_seed(42)
 
 class MLPHead(nn.Module):
     def __init__(self,vocab_size,n_embd,input_dim,output_dim):
         super().__init__()
         self.embedding_layer = nn.Embedding(vocab_size,n_embd)
+        nn.init.normal_(self.embedding_layer.weight, std=0.01)  # match Phase 1
         self.linear1 = nn.Linear(input_dim,4*input_dim,bias=False)
-        self.bn1 = nn.BatchNorm1d(4*input_dim)
+        self.bn1 = nn.BatchNorm1d(4*input_dim,momentum=0.3)
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(p=0.3)
+        self.dropout = nn.Dropout(p=0.5)
         self.linear2 = nn.Linear(4*input_dim,input_dim,bias=False)
-        self.bn2 = nn.BatchNorm1d(input_dim)
-        self.dropout2 = nn.Dropout(p=0.3)
+        self.bn2 = nn.BatchNorm1d(input_dim,momentum=0.3)
+        self.dropout2 = nn.Dropout(p=0.5)
         self.linear3 = nn.Linear(input_dim,output_dim)
         self.sequence = nn.Sequential(self.linear1,
                            self.bn1,
@@ -56,10 +59,15 @@ val_data["targets"] = val_data["Product"].map(dictio)
 
 epoch_size = len(train_data["Consumer complaint narrative"])
 num_classes = len(train_data["targets"].unique())
-num_epochs = 30
+parser = argparse.ArgumentParser()
+parser.add_argument("--epochs", type=int, default=30)
+num_epochs = parser.parse_args().epochs
 
 
-model = MLPHead(vocab_size=vocab_size,n_embd=n_embd,input_dim=n_embd,output_dim=num_classes)
+model = MLPHead(vocab_size=vocab_size,n_embd=n_embd,input_dim=n_embd,output_dim=num_classes).to(device=device)
+@torch.no_grad()
+def predict_logits(X, batch_size=1024):
+    return torch.cat([model(X[s:s + batch_size].to(device)) for s in range(0, len(X), batch_size)])
 optimizer = torch.optim.AdamW(params=model.parameters(),lr=1e-3,weight_decay=1e-3,betas=(0.9,0.999),eps=1e-8)
 
 # Training set
@@ -86,10 +94,10 @@ for _ in range(num_epochs):
         end = start + batch_size
         idx = perm[start:end]
 
-        input = Whole_vocab[idx]
-        targets = whole_targets[idx]
-        forward = model(input)
-        loss = F.cross_entropy(forward,target=targets)
+        xb = Whole_vocab[idx].to(device)
+        targets = whole_targets[idx].to(device)
+        forward = model(xb)
+        loss = F.cross_entropy(forward,target=targets,label_smoothing=0.1)
         epoch_loss_sum += loss.item()
         optimizer.zero_grad()
         loss.backward()
@@ -101,10 +109,9 @@ for _ in range(num_epochs):
     train_losses.append(epoch_loss_sum / (epoch_size//batch_size))
     model.eval()
     with torch.no_grad():
-        input = val_vocab
-        targets = val_targets
-        forward = model(input)
-        loss = F.cross_entropy(forward,target=targets)
+        targets = val_targets.to(device)
+        forward = predict_logits(val_vocab)
+        loss = F.cross_entropy(forward,target=targets,label_smoothing=0.1)
         current_val_loss = loss.item()
         maxes = torch.argmax(forward,axis=1)
         accuracy = (maxes == targets).float().mean() * 100
