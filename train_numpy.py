@@ -1,5 +1,6 @@
+import argparse
 import pandas as pd
-import cupy as np
+from src.backend import np
 from src.embedding import Embedding
 from src.vocab import Vocab
 from src.mlp import MLPHead
@@ -34,7 +35,10 @@ NeuralNet = MLPHead(embed_dim=embed_dim, output_dim=num_classes)
 params = NeuralNet.parameters() + Embeddor.parameters()
 optim = Optimizer(params=params, lr=1e-3, w_decay=1e-3)
 
-epochs = 30
+parser = argparse.ArgumentParser()
+parser.add_argument("--epochs", type=int, default=30)
+args = parser.parse_args()
+epochs = args.epochs
 batch_size = 32
 epoch_size = len(train_data["Consumer complaint narrative"])
 
@@ -49,6 +53,10 @@ Whole_targets = np.asarray(train_data["targets"].to_numpy())
 
 Vocabed_val = np.array([Vocabulary.encode(text) for text in val_data["Consumer complaint narrative"]])
 target = np.asarray(val_data["targets"].to_numpy())
+
+def set_train_mode(flag):
+    for layer in (NeuralNet.bn1, NeuralNet.bn2, NeuralNet.dropout1, NeuralNet.dropout2):
+        layer.training = flag
 
 for e in range(epochs):
     epoch_loss_sum = 0
@@ -81,10 +89,7 @@ for e in range(epochs):
     train_losses.append(float(epoch_loss_sum / (epoch_size // batch_size)))
 
     # Validation: BatchNorm switches to running stats, not batch stats
-    NeuralNet.ln1.training = False
-    NeuralNet.ln2.training = False
-    NeuralNet.dropout1.training = False
-    NeuralNet.dropout2.training = False
+    set_train_mode(False)
 
     Embedded_val = Embeddor(Vocabed_val)
     forward_val = NeuralNet(Embedded_val)
@@ -102,10 +107,7 @@ for e in range(epochs):
         best_val = current_val_loss
         best_params = [p.copy() for p in NeuralNet.parameters() + Embeddor.parameters()]
 
-    NeuralNet.ln1.training = True
-    NeuralNet.ln2.training = True
-    NeuralNet.dropout1.training = True
-    NeuralNet.dropout2.training = True
+    set_train_mode(True)
 
 # Restore whichever epoch had the best val loss, not just the last one
 all_params = NeuralNet.parameters() + Embeddor.parameters()
