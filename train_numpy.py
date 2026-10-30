@@ -119,14 +119,23 @@ for e in range(epochs):
         best_val = current_val_loss
         best_params = [p.copy() for p in NeuralNet.parameters() + Embeddor.parameters()]
         best_epoch = e + 1
+        best_bn_stats = [(bn.running_mean.copy(), bn.running_var.copy())
+                for bn in (NeuralNet.bn1, NeuralNet.bn2)]
     set_train_mode(True)
 
 # Restore whichever epoch had the best val loss, not just the last one
 all_params = NeuralNet.parameters() + Embeddor.parameters()
 for p, best_p in zip(all_params, best_params):
     p[...] = best_p
+for bn, (mean, var) in zip((NeuralNet.bn1, NeuralNet.bn2), best_bn_stats):
+    bn.running_mean, bn.running_var = mean, var
+
 
 print(f"best val loss (restored): {best_val}")
+set_train_mode(False)
+restored_val = float(CrossEntropyLoss(predict_logits(Vocabed_val), targets=target)())
+print(f"restored val loss = {restored_val:.6f} (recorded best = {float(best_val):.6f})")
+assert abs(restored_val - float(best_val)) < 1e-6, "restored checkpoint does not reproduce its val loss"
 set_train_mode(False)
 test_logits = predict_logits(Vocabed_test)
 test_preds = np.argmax(test_logits, axis=1)
