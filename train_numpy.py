@@ -1,13 +1,14 @@
 import argparse
 import pandas as pd
-from src.backend import np
+# from src.backend import np
 from src.embedding import Embedding
 from src.vocab import Vocab
 from src.mlp import MLPHead
 from src.crossentropy import CrossEntropyLoss
 from src.optimizer import Optimizer
 import matplotlib.pyplot as plt
-
+from sklearn.metrics import f1_score, classification_report
+from src.backend import np, to_numpy
 np.random.seed(42)
 embed_dim = 64
 
@@ -131,7 +132,10 @@ test_preds = np.argmax(test_logits, axis=1)
 test_acc = float((test_preds == test_target).mean() * 100)
 test_loss = float(CrossEntropyLoss(test_logits, targets=test_target)())
 print(f"test_acc = {test_acc:.2f}%, test_loss (label-smoothed CE) = {test_loss:.4f}")
-
+y_true, y_pred = to_numpy(test_target), to_numpy(test_preds)
+macro_f1 = float(f1_score(y_true, y_pred, average="macro"))
+print(f"test macro F1 = {macro_f1:.4f}")
+print(classification_report(y_true, y_pred, target_names=list(dictio.keys()), digits=3))
 epochs_range = range(1, epochs + 1)
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
