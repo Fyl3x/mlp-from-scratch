@@ -5,6 +5,7 @@ from torch import nn
 import torch.nn.functional as F
 import pandas as pd 
 from src.vocab import Vocab
+import json,os
 from sklearn.metrics import f1_score, classification_report, confusion_matrix
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print("device:", device)
@@ -89,6 +90,7 @@ train_losses, val_losses, val_accuracies = [], [], []
 
 # Checkpointing 
 best_val = float('inf')
+best_epoch = None
 best_state = None
 # Training Loop
 for e in range(num_epochs): 
@@ -126,6 +128,7 @@ for e in range(num_epochs):
         print(f"epoch {e}: val_loss = {loss.item():.4f}, val_accuracy = {accuracy.item():.2f}%")
         if current_val_loss < best_val:
             best_val = current_val_loss
+            best_epoch = e + 1
             best_state = copy.deepcopy(model.state_dict())
         
     model.train()
@@ -144,3 +147,25 @@ y_true, y_pred = test_targets.numpy(), test_preds.cpu().numpy()
 macro_f1 = float(f1_score(y_true, y_pred, average="macro"))
 print(f"test macro F1 = {macro_f1:.4f}")
 print(classification_report(y_true, y_pred, target_names=list(dictio.keys()), digits=3))
+results = {
+    "phase": "torch",
+    "backend": f"torch-{device}",
+    "config": {
+        "epochs": num_epochs, "batch_size": batch_size, "lr": 1e-3, "weight_decay": 1e-3,
+        "embed_dim": n_embd, "min_count": min_count, "max_len": max_length, "seed": 42,
+        "dropout": 0.5, "bn_momentum": 0.3, "label_smoothing": 0.1,
+        "note": "bn_momentum uses torch's convention; equals 0.7 in Phase 1's convention",
+    },
+    "labels": list(dictio.keys()),
+    "history": {"train_loss": train_losses, "val_loss": val_losses, "val_acc": val_accuracies},
+    "best_epoch": best_epoch,
+    "test": {
+        "acc": test_acc, "loss_label_smoothed": test_loss, "macro_f1": macro_f1,
+        "per_class": classification_report(y_true, y_pred, target_names=list(dictio.keys()), output_dict=True),
+        "confusion_matrix": confusion_matrix(y_true, y_pred).tolist(),
+    },
+}
+os.makedirs("results/torch", exist_ok=True)
+with open("results/torch/metrics.json", "w") as f:
+    json.dump(results, f, indent=2)
+print("saved results/torch/metrics.json")
