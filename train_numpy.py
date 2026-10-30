@@ -6,7 +6,6 @@ from src.vocab import Vocab
 from src.mlp import MLPHead
 from src.crossentropy import CrossEntropyLoss
 from src.optimizer import Optimizer
-import matplotlib.pyplot as plt
 import json, os
 from sklearn.metrics import f1_score, classification_report, confusion_matrix
 from src.backend import np, to_numpy, BACKEND
@@ -96,8 +95,8 @@ for e in range(epochs):
         grads = NeuralNet.gradients() + [dEmbedding]
         optim.step(grads=grads)
 
-        if i % 20 == 0:
-            print(loss_val)
+        if i % 500 == 0:
+            print(f"epoch {e} iter {i}: loss {float(loss_val):.4f}")
 
     train_losses.append(float(epoch_loss_sum / (epoch_size // batch_size)))
 
@@ -114,7 +113,7 @@ for e in range(epochs):
 
     val_losses.append(float(current_val_loss))
     val_accuracies.append(float(accuracy))
-    print(f"epoch {e}: val_loss = {current_val_loss}, val_accuracy = {accuracy:.2f}%")
+    print(f"epoch {e}: val_loss = {float(current_val_loss):.4f}, val_accuracy = {accuracy:.2f}%")
 
     if current_val_loss < best_val:
         best_val = current_val_loss
@@ -160,21 +159,3 @@ os.makedirs("results/numpy", exist_ok=True)
 with open("results/numpy/metrics.json", "w") as f:
     json.dump(results, f, indent=2)
 print("saved results/numpy/metrics.json")
-
-epochs_range = range(1, epochs + 1)
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-ax1.plot(epochs_range, train_losses, label="Train Loss")
-ax1.plot(epochs_range, val_losses, label="Validation Loss")
-ax1.set_title("Loss")
-ax1.set_xlabel("Epoch")
-ax1.set_ylabel("Loss")
-ax1.legend()
-
-ax2.plot(epochs_range, val_accuracies, label="Validation Accuracy")
-ax2.set_title("Validation Accuracy")
-ax2.set_xlabel("Epoch")
-ax2.set_ylabel("Accuracy")
-
-plt.tight_layout()
-plt.show()
