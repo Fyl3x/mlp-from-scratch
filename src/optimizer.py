@@ -1,5 +1,5 @@
 from .module import Module
-import cupy as np
+from .backend import np
 class Optimizer(Module):
     def __init__(self,params,lr,beta1=0.9,beta2=0.999,w_decay=0.0,eps=1e-8):
         self.params = params

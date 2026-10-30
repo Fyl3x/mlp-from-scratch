@@ -1,4 +1,4 @@
-import cupy as np
+from .backend import np
 from .module import Module
 
 

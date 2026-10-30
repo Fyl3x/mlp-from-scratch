@@ -1,4 +1,4 @@
-import cupy as np 
+from .backend import np
 from .module import Module
 class CrossEntropyLoss(Module):
     def __init__(self,logits,targets):

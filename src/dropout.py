@@ -1,6 +1,5 @@
 from .module import Module
-import cupy as np 
-
+from .backend import np
 
 class Dropout(Module):
     def __init__(self,percentage=0.5):
