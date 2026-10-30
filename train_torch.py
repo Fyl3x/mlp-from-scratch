@@ -5,7 +5,7 @@ from torch import nn
 import torch.nn.functional as F
 import pandas as pd 
 from src.vocab import Vocab
-
+from sklearn.metrics import f1_score, classification_report, confusion_matrix
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print("device:", device)
 torch.manual_seed(42)
@@ -56,6 +56,9 @@ for idx, product in enumerate(sorted(train_data["Product"].unique())):
 
 train_data["targets"] = train_data["Product"].map(dictio)
 val_data["targets"] = val_data["Product"].map(dictio)
+test_data = pd.read_csv("data/processed/test.csv")
+test_data["targets"] = test_data["Product"].map(dictio)
+assert test_data["targets"].notna().all(), "test has a label unseen in train"
 
 epoch_size = len(train_data["Consumer complaint narrative"])
 num_classes = len(train_data["targets"].unique())
@@ -77,6 +80,9 @@ whole_targets = torch.LongTensor(train_data["targets"])
 # Validation set
 val_vocab = torch.LongTensor([vocabulary.encode(text) for text in val_data["Consumer complaint narrative"]])
 val_targets = torch.LongTensor(val_data["targets"])
+# Testing set
+test_vocab = torch.LongTensor([vocabulary.encode(text) for text in test_data["Consumer complaint narrative"]])
+test_targets = torch.LongTensor(test_data["targets"])
 
 # Tracking measures
 train_losses, val_losses, val_accuracies = [], [], []
@@ -85,7 +91,7 @@ train_losses, val_losses, val_accuracies = [], [], []
 best_val = float('inf')
 best_state = None
 # Training Loop
-for _ in range(num_epochs): 
+for e in range(num_epochs): 
     epoch_loss_sum = 0
     
     perm = torch.randperm(epoch_size)
@@ -103,9 +109,9 @@ for _ in range(num_epochs):
         loss.backward()
         optimizer.step()
 
-        if i % 20 == 0:
-            print(f"Loss at epoch {_}, at iteration {i} is : {loss.item()}")
-    
+        if i % 500 == 0:
+            print(f"epoch {e} iter {i}: loss {loss.item():.4f}")
+
     train_losses.append(epoch_loss_sum / (epoch_size//batch_size))
     model.eval()
     with torch.no_grad():
@@ -117,8 +123,8 @@ for _ in range(num_epochs):
         accuracy = (maxes == targets).float().mean() * 100
         val_losses.append(loss.item())
         val_accuracies.append(accuracy.item())
-        print(f"Epoch {_} Val Loss is : {loss.item()} with accurary: {accuracy} %")
-    if current_val_loss < best_val:
+        print(f"epoch {e}: val_loss = {loss.item():.4f}, val_accuracy = {accuracy.item():.2f}%")
+        if current_val_loss < best_val:
             best_val = current_val_loss
             best_state = copy.deepcopy(model.state_dict())
         
@@ -126,33 +132,15 @@ for _ in range(num_epochs):
 
 model.load_state_dict(best_state)
 print(f"best val loss (restored): {best_val}")
+model.eval()  # the loop ended with model.train(): same trap as Phase 1
+test_logits = predict_logits(test_vocab)
+y = test_targets.to(device)
+test_loss = F.cross_entropy(test_logits, y, label_smoothing=0.1).item()
+test_preds = test_logits.argmax(dim=1)
+test_acc = (test_preds == y).float().mean().item() * 100
+print(f"test_acc = {test_acc:.2f}%, test_loss (label-smoothed CE) = {test_loss:.4f}")
 
-import matplotlib.pyplot as plt 
-epochs_range = range(1, num_epochs + 1)
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-ax1.plot(epochs_range, train_losses, label="Train Loss")
-ax1.plot(epochs_range, val_losses, label="Validation Loss")
-ax1.set_title("Loss")
-ax1.set_xlabel("Epoch")
-ax1.set_ylabel("Loss")
-ax1.legend()
-
-ax2.plot(epochs_range, val_accuracies, label="Validation Accuracy")
-ax2.set_title("Validation Accuracy")
-ax2.set_xlabel("Epoch")
-ax2.set_ylabel("Accuracy")
-
-plt.tight_layout()
-plt.show()
-
-
-
-
-
-
-
-
-
-
-
+y_true, y_pred = test_targets.numpy(), test_preds.cpu().numpy()
+macro_f1 = float(f1_score(y_true, y_pred, average="macro"))
+print(f"test macro F1 = {macro_f1:.4f}")
+print(classification_report(y_true, y_pred, target_names=list(dictio.keys()), digits=3))
