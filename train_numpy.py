@@ -7,8 +7,9 @@ from src.mlp import MLPHead
 from src.crossentropy import CrossEntropyLoss
 from src.optimizer import Optimizer
 import matplotlib.pyplot as plt
-from sklearn.metrics import f1_score, classification_report
-from src.backend import np, to_numpy
+import json, os
+from sklearn.metrics import f1_score, classification_report, confusion_matrix
+from src.backend import np, to_numpy, BACKEND
 np.random.seed(42)
 embed_dim = 64
 
@@ -48,6 +49,7 @@ epoch_size = len(train_data["Consumer complaint narrative"])
 
 best_val = float('inf')
 best_params = None
+best_epoch = None
 train_losses, val_losses, val_accuracies = [], [], []
 
 # Pre-encode text -> token IDs once, outside the training loop, so each
@@ -117,7 +119,7 @@ for e in range(epochs):
     if current_val_loss < best_val:
         best_val = current_val_loss
         best_params = [p.copy() for p in NeuralNet.parameters() + Embeddor.parameters()]
-
+        best_epoch = e + 1
     set_train_mode(True)
 
 # Restore whichever epoch had the best val loss, not just the last one
@@ -136,6 +138,29 @@ y_true, y_pred = to_numpy(test_target), to_numpy(test_preds)
 macro_f1 = float(f1_score(y_true, y_pred, average="macro"))
 print(f"test macro F1 = {macro_f1:.4f}")
 print(classification_report(y_true, y_pred, target_names=list(dictio.keys()), digits=3))
+
+results = {
+    "phase": "numpy",
+    "backend": BACKEND,
+    "config": {
+        "epochs": epochs, "batch_size": batch_size, "lr": 1e-3, "weight_decay": 1e-3,
+        "embed_dim": embed_dim, "min_count": 10, "max_len": 400, "seed": 42,
+        "dropout": 0.5, "bn_momentum": 0.7, "label_smoothing": 0.1,
+    },
+    "labels": list(dictio.keys()),
+    "history": {"train_loss": train_losses, "val_loss": val_losses, "val_acc": val_accuracies},
+    "best_epoch": best_epoch,
+    "test": {
+        "acc": test_acc, "loss_label_smoothed": test_loss, "macro_f1": macro_f1,
+        "per_class": classification_report(y_true, y_pred, target_names=list(dictio.keys()), output_dict=True),
+        "confusion_matrix": confusion_matrix(y_true, y_pred).tolist(),
+    },
+}
+os.makedirs("results/numpy", exist_ok=True)
+with open("results/numpy/metrics.json", "w") as f:
+    json.dump(results, f, indent=2)
+print("saved results/numpy/metrics.json")
+
 epochs_range = range(1, epochs + 1)
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
