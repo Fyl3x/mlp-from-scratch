@@ -1,6 +1,5 @@
 from .module import Module
-import cupy as np
-
+from .backend import np
 
 class LayerNorm1d(Module):
     def __init__(self,num_features,eps=1e-5):
@@ -41,7 +40,6 @@ class LayerNorm1d(Module):
         return result
 if __name__ == "__main__":
         
-    import numpy as np
 
     np.random.seed(42)
 
@@ -55,8 +53,8 @@ if __name__ == "__main__":
 
     # Analytical gradients
     ln(X)
-    dX, dgamma, dbeta = ln.backward(dout)
-
+    dX = ln.backward(dout)
+    dgamma, dbeta = ln.dgamma, ln.dbeta
     epsilon = 1e-5
 
     # -------------------------
