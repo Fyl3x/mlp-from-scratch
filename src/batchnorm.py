@@ -1,6 +1,5 @@
 from .module import Module
-import cupy as np
-
+from .backend import np
 
 class BatchNorm1d(Module):
     def __init__(self,num_features,eps=1e-5,momentum=0.9):
@@ -53,7 +52,6 @@ class BatchNorm1d(Module):
         result.append(self.dbeta)
         return result
 if __name__ == "__main__":
-    import numpy as np
 
     np.random.seed(42)
 
@@ -70,8 +68,8 @@ if __name__ == "__main__":
 
     # Forward + analytical backward
     bn(X)
-    dX, dgamma, dbeta = bn.backward(dout)
-
+    dX = bn.backward(dout)
+    dgamma, dbeta = bn.dgamma, bn.dbeta
     epsilon = 1e-5
 
     # -------------------------
