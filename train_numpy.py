@@ -57,7 +57,11 @@ target = np.asarray(val_data["targets"].to_numpy())
 def set_train_mode(flag):
     for layer in (NeuralNet.bn1, NeuralNet.bn2, NeuralNet.dropout1, NeuralNet.dropout2):
         layer.training = flag
-
+def predict_logits(X, batch_size=1024):
+    chunks = []
+    for s in range(0, len(X), batch_size):
+        chunks.append(NeuralNet(Embeddor(X[s:s + batch_size])))
+    return np.concatenate(chunks)
 for e in range(epochs):
     epoch_loss_sum = 0
     perm = np.random.permutation(epoch_size)  # fresh shuffle order each epoch
@@ -91,8 +95,8 @@ for e in range(epochs):
     # Validation: BatchNorm switches to running stats, not batch stats
     set_train_mode(False)
 
-    Embedded_val = Embeddor(Vocabed_val)
-    forward_val = NeuralNet(Embedded_val)
+    
+    forward_val = predict_logits(Vocabed_val)
     predictions = np.argmax(forward_val, axis=1)
     accuracy = (predictions == target).mean() * 100
 
