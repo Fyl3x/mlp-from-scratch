@@ -1,0 +1,106 @@
+{
+  "model": "TF-IDF (unigrams) + logistic regression",
+  "config": {
+    "min_df": 10,
+    "sublinear_tf": true,
+    "C_grid": [
+      0.1,
+      1.0,
+      10.0
+    ],
+    "best_C": 1.0
+  },
+  "vocab_size": 12550,
+  "val_acc": 76.60908331011423,
+  "test": {
+    "acc": 77.23743359215366,
+    "macro_f1": 0.7584119091640841,
+    "per_class": {
+      "Bank account or service": {
+        "precision": 0.7314886983632112,
+        "recall": 0.7820833333333334,
+        "f1-score": 0.7559403946838502,
+        "support": 2400.0
+      },
+      "Consumer Loan": {
+        "precision": 0.6557083084279737,
+        "recall": 0.5798097251585623,
+        "f1-score": 0.6154277699859747,
+        "support": 1892.0
+      },
+      "Credit card": {
+        "precision": 0.7497900923593619,
+        "recall": 0.7441666666666666,
+        "f1-score": 0.7469677959012966,
+        "support": 2400.0
+      },
+      "Credit reporting": {
+        "precision": 0.7620845921450151,
+        "recall": 0.8408333333333333,
+        "f1-score": 0.7995245641838352,
+        "support": 2400.0
+      },
+      "Debt collection": {
+        "precision": 0.6926040061633282,
+        "recall": 0.7491666666666666,
+        "f1-score": 0.7197758206565252,
+        "support": 2400.0
+      },
+      "Debt or credit management": {
+        "precision": 0.7281976744186046,
+        "recall": 0.4562841530054645,
+        "f1-score": 0.561030235162374,
+        "support": 1098.0
+      },
+      "Money transfer / virtual currency": {
+        "precision": 0.8143687707641196,
+        "recall": 0.8170833333333334,
+        "f1-score": 0.8157237936772047,
+        "support": 2400.0
+      },
+      "Mortgage": {
+        "precision": 0.9117889530090684,
+        "recall": 0.9216666666666666,
+        "f1-score": 0.9167012018234563,
+        "support": 2400.0
+      },
+      "Payday/title/personal loan": {
+        "precision": 0.6834880904319741,
+        "recall": 0.7054166666666667,
+        "f1-score": 0.6942792700430592,
+        "support": 2400.0
+      },
+      "Prepaid card": {
+        "precision": 0.8146114864864865,
+        "recall": 0.8289643317576278,
+        "f1-score": 0.8217252396166134,
+        "support": 2327.0
+      },
+      "Student loan": {
+        "precision": 0.9418402777777778,
+        "recall": 0.9041666666666667,
+        "f1-score": 0.9226190476190477,
+        "support": 2400.0
+      },
+      "Vehicle loan or lease": {
+        "precision": 0.7341453170936582,
+        "recall": 0.7283333333333334,
+        "f1-score": 0.7312277766157708,
+        "support": 2400.0
+      },
+      "accuracy": 0.7723743359215366,
+      "macro avg": {
+        "precision": 0.768343022286715,
+        "recall": 0.7548312397156933,
+        "f1-score": 0.7584119091640841,
+        "support": 26917.0
+      },
+      "weighted avg": {
+        "precision": 0.7722851436107085,
+        "recall": 0.7723743359215366,
+        "f1-score": 0.7704862491399235,
+        "support": 26917.0
+      }
+    }
+  }
+}
