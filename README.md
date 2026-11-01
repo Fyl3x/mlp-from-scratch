@@ -2,8 +2,9 @@
 
 I built a multilayer perceptron (MLP) from scratch in NumPy (every layer, the backward passes, the loss and the optimizer, no autograd) to understand what happens inside a neural network. I applied it to sorting CFPB consumer complaints into 12 product categories.
 
-
 To check my hand-written backpropagation, I rebuilt the same network in PyTorch with autograd. The two match: they reach their best validation loss at the same epoch and achieve 74.54% and 74.10% test accuracy, respectively. A simple TF-IDF + logistic regression baseline scores higher at 77.24%, and I explain why below.
+
+**Full report (38 pages):** [report/complaint_triage_mlp_report.pdf](report/complaint_triage_mlp_report.pdf). It follows one complaint through every layer, forward and backward, with every tensor shape and the hand-derived gradients.
 
 ![NumPy vs PyTorch validation accuracy](results/phase_comparison.png)
 
